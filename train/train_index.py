@@ -27,6 +27,8 @@ feature_dir = os.path.join(
 log_path = os.path.join(exp_dir, "train_index.log")
 os.makedirs(exp_dir, exist_ok=True)
 
+# DELTA SYNTH: Set OpenMP threads for FAISS to prevent CPU oversubscription and system freezes
+faiss.omp_set_num_threads(max(1, n_cpu))
 
 def log(message):
     print(message, flush=True)

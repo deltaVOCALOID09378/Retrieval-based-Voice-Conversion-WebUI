@@ -14,7 +14,8 @@ from tools.file_io import read_text
 
 MATPLOTLIB_FLAG = False
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+# DELTA SYNTH: Set default logging to INFO to prevent excessive I/O and log spam during long training sessions
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging
 
 

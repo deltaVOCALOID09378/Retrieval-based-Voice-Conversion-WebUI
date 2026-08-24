@@ -48,7 +48,8 @@ training_is_half = training_dtype == torch.float16
 from torch.cuda.amp import GradScaler, autocast
 
 torch.backends.cudnn.deterministic = False
-torch.backends.cudnn.benchmark = False
+# DELTA SYNTH: Enable benchmark for faster training on fixed-size spectrograms
+torch.backends.cudnn.benchmark = True
 from time import sleep
 from time import time as ttime
 
@@ -185,21 +186,26 @@ def run(rank, n_gpus, hps, logger, use_ddp):
         rank=rank,
         shuffle=True,
     )
-    # It is possible that dataloader's workers are out of shared memory. Please try to raise your shared memory limit.
-    # num_workers=8 -> num_workers=4
+    # DELTA SYNTH: Adaptive worker & prefetch scaling to prevent RAM OOM and shared memory exhaustion.
+    import multiprocessing
+    cpu_cores = multiprocessing.cpu_count()
+    safe_workers = min(4, max(1, cpu_cores // 2))
+    safe_prefetch = 2 if safe_workers > 0 else None
+    
     if hps.if_f0 == 1:
         collate_fn = TextAudioCollateMultiNSFsid()
     else:
         collate_fn = TextAudioCollate()
+        
     train_loader = DataLoader(
         train_dataset,
-        num_workers=4,
+        num_workers=safe_workers,
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
         batch_sampler=train_sampler,
-        persistent_workers=True,
-        prefetch_factor=8,
+        persistent_workers=True if safe_workers > 0 else False,
+        prefetch_factor=safe_prefetch,
     )
     if hps.if_f0 == 1:
         net_g = RVC_Model_f0(

@@ -146,7 +146,8 @@ class PreProcess:
                 for idx, name in enumerate(names)
             ]
             worker_count = max(n_p, 1)
-            worker_count = min(worker_count, max(total, 1))
+            # DELTA SYNTH: Cap workers to CPU cores to prevent system freeze during heavy I/O
+            worker_count = min(worker_count, max(total, 1), multiprocessing.cpu_count())
             println(
                 i18n("[数据切分] 待处理：%s | 进程数：%s")
                 % (total, worker_count)
@@ -174,7 +175,8 @@ class PreProcess:
         ]
         total = len(infos)
         worker_count = max(n_p, 1)
-        worker_count = min(worker_count, max(total, 1))
+        # DELTA SYNTH: Cap workers to CPU cores to prevent system freeze during heavy I/O
+        worker_count = min(worker_count, max(total, 1), multiprocessing.cpu_count())
         println(
             i18n("[数据切分] 多说话人待处理：%s | 进程数：%s")
             % (total, worker_count)
